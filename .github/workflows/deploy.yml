@@ -16,7 +16,6 @@ jobs:
       uses: webfactory/ssh-agent@v0.9.0 # Updated to a newer version
       with:
         ssh-private-key: ${{ secrets.CONTABO_SSH_KEY }}
-        ssh-add-flags: '<<< "${{ secrets.CONTABO_SSH_KEY_PASSPHRASE }}"'
 
     - name: Deploy via SSH
       uses: appleboy/ssh-action@v1.0.3 # Updated to a newer version
