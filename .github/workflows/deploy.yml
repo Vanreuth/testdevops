@@ -2,7 +2,7 @@ name: Deploy to Contabo
 
 on:
   push:
-    branches: [ "main" ]  # deploy when pushing to main
+    branches: [ "main" ]
 
 jobs:
   deploy:
@@ -10,21 +10,20 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4 # Updated to a newer version
 
-    - name: Setup SSH Key (with passphrase)
-      uses: webfactory/ssh-agent@v0.7.0
+    - name: Setup SSH Agent
+      uses: webfactory/ssh-agent@v0.9.0 # Updated to a newer version
       with:
         ssh-private-key: ${{ secrets.CONTABO_SSH_KEY }}
         ssh-add-flags: '<<< "${{ secrets.CONTABO_SSH_KEY_PASSPHRASE }}"'
 
     - name: Deploy via SSH
-      uses: appleboy/ssh-action@v0.1.10
+      uses: appleboy/ssh-action@v1.0.3 # Updated to a newer version
       with:
         host: ${{ secrets.CONTABO_HOST }}
         username: ${{ secrets.CONTABO_USER }}
-        key: ${{ secrets.CONTABO_SSH_KEY }}
-        passphrase: ${{ secrets.CONTABO_SSH_KEY_PASSPHRASE }}
+        # The key and passphrase are removed here because the SSH Agent handles authentication
         script: |
           cd /var/www/myapp || git clone https://github.com/Vanreuth/testdevops.git /var/www/myapp
           cd /var/www/myapp
