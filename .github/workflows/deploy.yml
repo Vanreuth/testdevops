@@ -1,35 +1,33 @@
-name: Deploy to Contabo VPS
+name: Deploy to Contabo
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]  # deploy when pushing to main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install Ansible & MongoDB modules
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y ansible python3-pip
-        pip3 install pymongo ansible[community]
+    - name: Setup SSH Key (with passphrase)
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.CONTABO_SSH_KEY }}
+        ssh-passphrase: ${{ secrets.CONTABO_SSH_KEY_PASSPHRASE }}
 
-    - name: Setup SSH key with passphrase
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.CONTABO_SSH_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        eval "$(ssh-agent -s)"
-        ssh-add ~/.ssh/id_rsa <<< "${{ secrets.CONTABO_SSH_KEY_PASSPHRASE }}"
-      shell: bash
-    - name: Run Ansible Playbook
-      run: ansible-playbook -i hosts.ini deploy.yml
-      env:
-        ANSIBLE_HOST_KEY_CHECKING: False
-        APP_PORT: ${{ secrets.APP_PORT }}
-        MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.CONTABO_HOST }}
+        username: ${{ secrets.CONTABO_USER }}
+        key: ${{ secrets.CONTABO_SSH_KEY }}
+        passphrase: ${{ secrets.CONTABO_SSH_KEY_PASSPHRASE }}
+        script: |
+          cd /var/www/myapp || git clone https://github.com/Vanreuth/testdevops.git /var/www/myapp
+          cd /var/www/myapp
+          git pull origin main
+          npm install --production
+          pm2 restart all || pm2 start server.js --name myapp
