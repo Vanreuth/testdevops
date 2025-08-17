@@ -1,70 +1,94 @@
----
-- name: Deploy Node.js app on Contabo
-  hosts: contabo
+- hosts: contabo
+  become: true
   vars:
-    app_name: my-app
-    app_dir: /var/www/my-app
-    node_version: "18"
-
+    app_path: /var/www/myapp
+    mongo_port: 27017
+    mongo_bind_ip: 127.0.0.1  # restrict to local only (secure)
+    mongo_user: myappuser
+    mongo_password: "{{ lookup('env', 'MONGO_PASSWORD') }}"
+    mongo_db: myappdb
+    env_vars:
+      PORT: "{{ lookup('env', 'APP_PORT') }}"
+      MONGO_URI: "mongodb://{{ mongo_user }}:{{ mongo_password }}@localhost:{{ mongo_port }}/{{ mongo_db }}"
+      JWT_SECRET: "{{ lookup('env', 'JWT_SECRET') | default('changeme') }}"
   tasks:
-    - name: Ensure system packages are up to date
+    - name: Update apt cache
       apt:
         update_cache: yes
-        upgrade: yes
 
-    - name: Install dependencies
+    - name: Install required packages
       apt:
-        name: [git, curl, build-essential]
+        name:
+          - git
+          - curl
+          - build-essential
         state: present
 
-    - name: Install NVM
-      shell: |
-        export NVM_DIR="$HOME/.nvm"
-        if [ ! -d "$NVM_DIR" ]; then
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-        fi
-      args:
-        executable: /bin/bash
+    - name: Add MongoDB GPG key
+      apt_key:
+        url: https://www.mongodb.org/static/pgp/server-6.0.asc
+        state: present
 
-    - name: Install Node.js and PM2
-      shell: |
-        export NVM_DIR="$HOME/.nvm"
-        source $NVM_DIR/nvm.sh
-        nvm install {{ node_version }}
-        nvm use {{ node_version }}
-        npm install -g pm2
-      args:
-        executable: /bin/bash
+    - name: Add MongoDB repository
+      apt_repository:
+        repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu {{ ansible_distribution_release }}/mongodb-org/6.0 multiverse"
+        state: present
+        filename: mongodb-org-6.0
 
-    - name: Create app directory
+    - name: Install MongoDB
+      apt:
+        name: mongodb-org
+        state: present
+        update_cache: yes
+
+    - name: Ensure MongoDB is running
+      systemd:
+        name: mongod
+        state: started
+        enabled: yes
+
+    - name: Create MongoDB admin user
+      community.mongodb.mongodb_user:
+        login_host: localhost
+        login_port: "{{ mongo_port }}"
+        database: admin
+        name: "{{ mongo_user }}"
+        password: "{{ mongo_password }}"
+        roles: "readWrite,dbAdmin"
+        state: present
+
+    - name: Ensure app directory exists
       file:
-        path: "{{ app_dir }}"
+        path: "{{ app_path }}"
         state: directory
+        owner: root
+        group: root
 
-    - name: Copy project files to VPS
-      synchronize:
-        src: "../"
-        dest: "{{ app_dir }}"
-        rsync_opts:
-          - "--exclude=node_modules"
-          - "--exclude=.git"
+    - name: Clone or update repo
+      git:
+        repo: "git@github.com:USERNAME/REPO.git"
+        dest: "{{ app_path }}"
+        version: main
+        force: yes
 
-    - name: Install Node.js dependencies
+    - name: Install dependencies
+      npm:
+        path: "{{ app_path }}"
+        production: yes
+
+    - name: Create .env file from secrets
+      copy:
+        dest: "{{ app_path }}/.env"
+        content: |
+          {% for key, value in env_vars.items() %}
+          {{ key }}={{ value }}
+          {% endfor %}
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Start or restart app with PM2
       shell: |
-        export NVM_DIR="$HOME/.nvm"
-        source $NVM_DIR/nvm.sh
-        cd {{ app_dir }}
-        npm install --production
-      args:
-        executable: /bin/bash
-
-    - name: Start/Restart app with PM2
-      shell: |
-        export NVM_DIR="$HOME/.nvm"
-        source $NVM_DIR/nvm.sh
-        cd {{ app_dir }}
-        pm2 stop {{ app_name }} || true
-        pm2 start src/app.js --name {{ app_name }}
+        cd "{{ app_path }}"
+        pm2 restart myapp || pm2 start server.js --name myapp --env production
         pm2 save
-      args:
-        executable: /bin/bash
