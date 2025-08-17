@@ -24,8 +24,12 @@ jobs:
         run: terraform init
         working-directory: ./tf
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -var="aws_region=$AWS_REGION" -var="ami_id=$AMI_ID"
+      - name: Export AWS credentials and Terraform Apply
+        run: |
+          export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          export AWS_REGION=${AWS_REGION}
+          terraform apply -auto-approve -var="aws_region=$AWS_REGION" -var="ami_id=$AMI_ID"
         working-directory: ./tf
 
       - name: Get Terraform Output
