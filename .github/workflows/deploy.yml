@@ -24,9 +24,8 @@ jobs:
         echo "${{ secrets.CONTABO_SSH_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         eval "$(ssh-agent -s)"
-        ssh-add - <<< "${{ secrets.CONTABO_SSH_KEY_PASSPHRASE }}"
+        ssh-add ~/.ssh/id_rsa <<< "${{ secrets.CONTABO_SSH_KEY_PASSPHRASE }}"
       shell: bash
-
     - name: Run Ansible Playbook
       run: ansible-playbook -i hosts.ini deploy.yml
       env:
