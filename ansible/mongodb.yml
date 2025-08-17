@@ -1,0 +1,24 @@
+- name: Install and configure MongoDB
+  hosts: db_servers # Or 'web_servers' if MongoDB is on the same server
+  become: yes
+  tasks:
+    - name: Import MongoDB GPG key
+      ansible.builtin.apt_key:
+        url: https://www.mongodb.org/static/pgp/server-4.4.asc # Adjust version as needed
+        state: present
+
+    - name: Add MongoDB repository
+      ansible.builtin.apt_repository:
+        repo: deb http://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse # Adjust distribution and version
+        state: present
+
+    - name: Install MongoDB packages
+      ansible.builtin.apt:
+        name: mongodb-org
+        update_cache: yes
+
+    - name: Start MongoDB service
+      ansible.builtin.service:
+        name: mongod
+        state: started
+        enabled: yes

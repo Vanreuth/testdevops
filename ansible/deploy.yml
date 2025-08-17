@@ -1,0 +1,70 @@
+---
+- name: Deploy Node.js app on Contabo
+  hosts: contabo
+  vars:
+    app_name: my-app
+    app_dir: /var/www/my-app
+    node_version: "18"
+
+  tasks:
+    - name: Ensure system packages are up to date
+      apt:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Install dependencies
+      apt:
+        name: [git, curl, build-essential]
+        state: present
+
+    - name: Install NVM
+      shell: |
+        export NVM_DIR="$HOME/.nvm"
+        if [ ! -d "$NVM_DIR" ]; then
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        fi
+      args:
+        executable: /bin/bash
+
+    - name: Install Node.js and PM2
+      shell: |
+        export NVM_DIR="$HOME/.nvm"
+        source $NVM_DIR/nvm.sh
+        nvm install {{ node_version }}
+        nvm use {{ node_version }}
+        npm install -g pm2
+      args:
+        executable: /bin/bash
+
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+
+    - name: Copy project files to VPS
+      synchronize:
+        src: "../"
+        dest: "{{ app_dir }}"
+        rsync_opts:
+          - "--exclude=node_modules"
+          - "--exclude=.git"
+
+    - name: Install Node.js dependencies
+      shell: |
+        export NVM_DIR="$HOME/.nvm"
+        source $NVM_DIR/nvm.sh
+        cd {{ app_dir }}
+        npm install --production
+      args:
+        executable: /bin/bash
+
+    - name: Start/Restart app with PM2
+      shell: |
+        export NVM_DIR="$HOME/.nvm"
+        source $NVM_DIR/nvm.sh
+        cd {{ app_dir }}
+        pm2 stop {{ app_name }} || true
+        pm2 start src/app.js --name {{ app_name }}
+        pm2 save
+      args:
+        executable: /bin/bash
