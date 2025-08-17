@@ -33,11 +33,7 @@ jobs:
             -var="aws_access_key=$AWS_ACCESS_KEY_ID" \
             -var="aws_secret_key=$AWS_SECRET_ACCESS_KEY" \
             -var="aws_region=$AWS_REGION" \
-            -var="ami_id=$AMI_ID" \
-            -var="ec2_ssh_pub_key=${{ secrets.EC2_SSH_PUB_KEY }}"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            -var="ami_id=$AMI_ID"
 
       - name: Get Terraform Output
         id: terraform-output
