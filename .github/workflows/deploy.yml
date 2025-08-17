@@ -83,3 +83,9 @@ jobs:
             echo "Deployment completed!"
             echo "Application should be available at: http://${{ needs.terraform.outputs.ec2_ip }}"
           EOF
+
+      - name: Debug AWS env
+        run: |
+          echo "AWS_ACCESS_KEY_ID is set: ${AWS_ACCESS_KEY_ID:+yes}"
+          echo "AWS_SECRET_ACCESS_KEY is set: ${AWS_SECRET_ACCESS_KEY:+yes}"
+          echo "AWS_REGION is set: ${AWS_REGION:+yes}"
