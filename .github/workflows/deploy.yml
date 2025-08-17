@@ -21,10 +21,19 @@ jobs:
 
       - name: Terraform Init & Apply
         id: terraform-apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AMI_ID: ${{ secrets.AMI_ID }}
         run: |
           cd tf
           terraform init
           terraform apply -auto-approve \
+            -var="aws_access_key=$AWS_ACCESS_KEY_ID" \
+            -var="aws_secret_key=$AWS_SECRET_ACCESS_KEY" \
+            -var="aws_region=$AWS_REGION" \
+            -var="ami_id=$AMI_ID" \
             -var="ec2_ssh_pub_key=${{ secrets.EC2_SSH_PUB_KEY }}"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -32,6 +41,9 @@ jobs:
 
       - name: Get Terraform Output
         id: terraform-output
+          INSTANCE_PUBLIC_IP=$(terraform output -raw instance_public_ip)
+          echo "instance_public_ip=$INSTANCE_PUBLIC_IP" >> $GITHUB_OUTPUT
+          echo "EC2 Public IP: $INSTANCE_PUBLIC_IP"
         run: |
           cd tf
           PUBLIC_IP=$(terraform output -raw public_ip)
