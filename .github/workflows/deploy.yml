@@ -43,7 +43,7 @@ jobs:
         id: terraform-output
           INSTANCE_PUBLIC_IP=$(terraform output -raw instance_public_ip)
           echo "instance_public_ip=$INSTANCE_PUBLIC_IP" >> $GITHUB_OUTPUT
-          echo "EC2 Public IP: $INSTANCE_PUBLIC_IP"
+          echo "EC2 Public IP $INSTANCE_PUBLIC_IP"
         run: |
           cd tf
           PUBLIC_IP=$(terraform output -raw public_ip)
