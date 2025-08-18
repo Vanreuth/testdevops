@@ -19,7 +19,7 @@ mongoose.connect(process.env.MONGO_URI, {
 // Basic health check endpoint
 app.get("/", (req, res) => {
   res.json({
-    message: "Hello from Node.js from Cambodia king!",
+    message: "Hello from Node.js from Cambodia king of kingdom!",
     status: "Server is running",
     timestamp: new Date().toISOString(),
     mongodb: mongoose.connection.readyState === 1 ? "Connected" : "Disconnected"
