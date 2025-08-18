@@ -10,22 +10,16 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4 # Updated to a newer version
-
-    - name: Setup SSH Agent
-      uses: webfactory/ssh-agent@v0.9.0 # Updated to a newer version
-      with:
-        ssh-private-key: ${{ secrets.CONTABO_SSH_KEY }}
+      uses: actions/checkout@v4
 
     - name: Deploy via SSH
-      uses: appleboy/ssh-action@v1.0.3 # Updated to a newer version
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.CONTABO_HOST }}
         username: ${{ secrets.CONTABO_USER }}
-        # The key and passphrase are removed here because the SSH Agent handles authentication
+        key: ${{ secrets.CONTABO_SSH_KEY }}
         script: |
-          cd /var/www/myapp || git clone https://github.com/Vanreuth/testdevops.git /var/www/myapp
-          cd /var/www/myapp
+          cd /var/www/testdevops
           git pull origin main
           npm install --production
-          pm2 restart all || pm2 start server.js --name myapp
+          pm2 restart all || pm2 start server.js --name testdevops
