@@ -22,9 +22,10 @@ jobs:
         script: |
           # Navigate to project directory
           cd /var/www/testdevops
+          # Stash any local changes to avoid conflicts
+          git stash push -m "Auto-stash before deployment $(date)"
           # Pull latest code
           git pull origin main
-          nano src/app.js
           # Install dependencies
           npm install --production
           
