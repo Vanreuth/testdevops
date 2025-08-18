@@ -22,4 +22,5 @@ jobs:
           cd /var/www/testdevops
           git pull origin main
           npm install --production
+          export PATH=$PATH:/usr/local/bin
           pm2 restart all || pm2 start server.js --name testdevops
