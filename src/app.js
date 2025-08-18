@@ -9,8 +9,7 @@ app.use(express.json());
 //   .then(() => console.log("✅ MongoDB connected"))
 //   .catch(err => console.error("❌ MongoDB connection error:", err));
 
-app.get("/", (req, res) => res.send("Hello from Node.js + MongoDB on AWS!"));
-
+app.get("/", (req, res) => res.send("Hello from Node.js form Cambodia!"));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
