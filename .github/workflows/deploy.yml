@@ -1,5 +1,4 @@
-# .github/workflows/deploy.yml
-name: Deploy to Contabo VPS
+name: Deploy to vanreuth.site
 
 on:
   push:
@@ -19,31 +18,37 @@ jobs:
         host: ${{ secrets.CONTABO_HOST }}
         username: ${{ secrets.CONTABO_USER }}
         key: ${{ secrets.CONTABO_SSH_KEY }}
+        
         script: |
-          # Navigate to project directory
           cd /var/www/testdevops
-          # Stash any local changes to avoid conflicts
+          
+          # Backup and stash changes
           git stash push -m "Auto-stash before deployment $(date)"
+          
           # Pull latest code
           git pull origin main
-          # Install dependencies
-          npm install --production
           
-          # Create .env file with environment variables
+          # Install dependencies
+          npm install --omit=dev
+          
+          # Create environment file
           cat > .env << EOF
-          PORT=${{ secrets.PORT }}
+          PORT=3000
           MONGO_URI=${{ secrets.MONGO_URI }}
           NODE_ENV=production
+          DOMAIN=vanreuth.site
+          HTTPS_ENABLED=true
           EOF
           
-          # Source NVM to make pm2 available
+          # Restart application
           source ~/.nvm/nvm.sh
-          
-          # Restart or start the application
-           pm2 restart testdevops || pm2 start src/app.js --name testdevops
-          
-          # Save PM2 configuration
+          pm2 restart testdevops || pm2 start src/app.js --name testdevops
           pm2 save
           
-          # Show PM2 status
+          # Ensure Nginx is running
+          sudo systemctl reload nginx
+          
+          echo "🚀 Deployment complete!"
+          echo "🌐 Your site: https://vanreuth.site"
+          echo "🔒 SSL Status: $(curl -s -o /dev/null -w "%{http_code}" https://vanreuth.site)"
           pm2 status
