@@ -1,4 +1,5 @@
-name: Deploy to Contabo
+# .github/workflows/deploy.yml
+name: Deploy to Contabo VPS
 
 on:
   push:
@@ -7,11 +8,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
+     
     - name: Deploy via SSH
       uses: appleboy/ssh-action@v1.0.3
       with:
@@ -19,8 +20,30 @@ jobs:
         username: ${{ secrets.CONTABO_USER }}
         key: ${{ secrets.CONTABO_SSH_KEY }}
         script: |
+          # Navigate to project directory
           cd /var/www/testdevops
+          
+          # Pull latest code
           git pull origin main
+          
+          # Install dependencies
           npm install --production
+          
+          # Create .env file with environment variables
+          cat > .env << EOF
+          PORT=${{ secrets.PORT }}
+          MONGO_URI=${{ secrets.MONGO_URI }}
+          NODE_ENV=production
+          EOF
+          
+          # Source NVM to make pm2 available
           source ~/.nvm/nvm.sh
-          pm2 restart all || pm2 start server.js --name testdevops
+          
+          # Restart or start the application
+          pm2 restart testdevops || pm2 start server.js --name testdevops
+          
+          # Save PM2 configuration
+          pm2 save
+          
+          # Show PM2 status
+          pm2 status
