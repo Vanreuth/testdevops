@@ -22,10 +22,9 @@ jobs:
         script: |
           # Navigate to project directory
           cd /var/www/testdevops
-          
           # Pull latest code
           git pull origin main
-          
+          nano src/app.js
           # Install dependencies
           npm install --production
           
